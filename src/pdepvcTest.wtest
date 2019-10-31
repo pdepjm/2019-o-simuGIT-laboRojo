@@ -1,0 +1,40 @@
+import archivos.*
+
+describe "PdeP VC" {
+	const carpeta = new Carpeta(nombre = "PdeP")
+	const branch = new Branch()
+	const commit = new Commit(descripcion = "Commit inicial")
+	const crearLeeme = new Crear(nombreArchivo = "leeme.md")
+	const crearParcial = new Crear(nombreArchivo = "parcial.wlk")
+	const agregarAParcial = new Agregar(
+		texto = "Este es un parcial", 
+		nombreArchivo = "leeme.md"
+	)
+
+	fixture {
+		commit.agregarCambio(crearLeeme)
+		commit.agregarCambio(crearParcial)
+		commit.agregarCambio(agregarAParcial)		
+		
+		branch.agregarCommit(commit)
+		branch.agregarCommit(commit.revert())
+	}
+			
+	test "Aplicar commits a carpeta" {
+		commit.aplicarCambios(carpeta)
+		
+		assert.equals(2, carpeta.archivos().size())
+		assert.equals("Este es un parcial", carpeta.obtenerArchivo("leeme.md").contenido())
+		assert.equals("", carpeta.obtenerArchivo("parcial.wlk").contenido())
+	}
+	
+	test "Aplicar comits que falla" {
+		carpeta.nuevoArchivo("parcial.wlk")
+		assert.throwsException({ commit.aplicarCambios(carpeta) })
+	}
+	
+	test "Revert de un commit" {
+		branch.checkout(carpeta)
+		assert.that(carpeta.archivos().isEmpty())
+	}
+}
